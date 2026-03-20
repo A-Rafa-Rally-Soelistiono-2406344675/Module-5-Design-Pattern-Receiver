@@ -85,5 +85,8 @@ This is the place for you to write reflections:
 ### Mandatory (Subscriber) Reflections
 
 #### Reflection Subscriber-1
+1. We need `RwLock<Vec<Notification>>` because the notification list is shared mutable state that can be accessed by multiple Rocket request handlers at the same time. `Vec<Notification>` alone is not safe to mutate concurrently. `RwLock` is appropriate here because it allows multiple readers to access the stored notifications concurrently while still protecting writes when a new notification is inserted. Compared to `Mutex`, this is a better fit when read operations can become more frequent than writes.
+
+2. Rust does not allow mutating ordinary `static` data directly because shared mutable global state would easily violate ownership and thread-safety guarantees. `lazy_static` helps because it initializes the value safely at runtime and lets us wrap the data in a synchronization primitive such as `RwLock`. That way, mutation is still possible, but only through controlled access that satisfies Rust's safety rules. In contrast to Java, Rust requires this extra structure so global mutation is explicit and thread-safe by construction.
 
 #### Reflection Subscriber-2
