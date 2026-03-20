@@ -85,13 +85,33 @@ This is the place for you to write reflections:
 ### Mandatory (Subscriber) Reflections
 
 #### Reflection Subscriber-1
-1. We need `RwLock<Vec<Notification>>` because the notification list is shared mutable state that can be accessed by multiple Rocket request handlers at the same time. `Vec<Notification>` alone is not safe to mutate concurrently. `RwLock` is appropriate here because it allows multiple readers to access the stored notifications concurrently while still protecting writes when a new notification is inserted. Compared to `Mutex`, this is a better fit when read operations can become more frequent than writes.
+1. Question:
+   In this tutorial, we used RwLock<> to synchronize the use of Vec of Notifications. Explain why it is necessary for this case, and explain why we do not use Mutex<> instead?
+   
+   Answer:
+   `RwLock<Vec<Notification>>` sangat diperlukan karena list of notifikasi adalah shared mutable state yang dapat diakses oleh beberapa request Rocket secara bersamaan. `Vec<Notification>` biasa tidak aman jika diakses atau diubah secara paralel. `RwLock` sangat cocok dipakai di code karena mengizinkan banyak pembaca membaca data secara bersamaan, tetapi tetap mengunci akses saat ada penulisan notifikasi baru. Dibandingkan dengan `Mutex`, `RwLock` lebih sesuai pada code ini ketika operasi `Read` berpotensi lebih sering daripada operasi  `Write`.
 
-2. Rust does not allow mutating ordinary `static` data directly because shared mutable global state would easily violate ownership and thread-safety guarantees. `lazy_static` helps because it initializes the value safely at runtime and lets us wrap the data in a synchronization primitive such as `RwLock`. That way, mutation is still possible, but only through controlled access that satisfies Rust's safety rules. In contrast to Java, Rust requires this extra structure so global mutation is explicit and thread-safe by construction.
+2. Question:
+   In this tutorial, we used lazy_static external library to define Vec and DashMap as a "static" variable. Compared to Java where we can mutate the content of a static variable via a static function, why did not Rust allow us to do so?
+   
+   Answer:
+   Rust tidak mengizinkan mutasi langsung pada `static` biasa karena shared mutable global state sangat mudah melanggar aturan ownership dan thread safety. `lazy_static` sangat membantu dengan cara menginisialisasi nilai global secara aman pada runtime, setelah itu nilai tersebut dibungkus dengan primitive sinkronisasi seperti `RwLock`. Dengan begitu, mutasi tetap memungkinkan, tetapi hanya melalui akses yang aman menurut aturan Rust. 
 
 #### Reflection Subscriber-2
-1. Yes, I explored files outside the explicit tutorial steps, especially `src/lib.rs`, because the receiver service depends on shared application configuration and HTTP client setup. From there, I learned how `APP_CONFIG`, `REQWEST_CLIENT`, and the common `Result`/error helpers are exposed for the rest of the project. That context is important because the subscribe and unsubscribe flows need the receiver root URL, publisher root URL, and instance name from centralized configuration instead of hardcoding them inside the service.
+1. Question:
+   Have you explored things outside of the steps in the tutorial, for example src/lib.rs? If not, explain why you did not do so. If yes, explain things that you have learned from those other parts of code.
+   
+   Answer:
+   Ya, saya sempat melihat file di luar dari tutorial, terutama `src/lib.rs`, karena service receiver bergantung pada konfigurasi aplikasi dan HTTP client yang didefinisikan secara global. Dari hal tersebut saya memahami bagaimana `APP_CONFIG`, `REQWEST_CLIENT`, serta helper `Result` dan error response dipakai bersama oleh seluruh modul. Menurut saya hal ini sangat penting karena alur subscribe dan unsubscribe membutuhkan URL receiver, URL publisher, dan nama instance yang diambil dari konfigurasi center dan bukan ditulis manual di setiap function.
 
-2. Observer pattern makes adding more receiver instances relatively easy because the publisher only needs to know each subscriber through the same interface: a registered callback URL grouped by product type. That keeps the publisher logic stable even when the number of subscribers grows. Adding more than one Main app would be harder than adding more receivers, because then we would need to think about how receivers choose a publisher, how subscriptions are coordinated across multiple publishers, and whether notifications from different publishers should be merged or treated separately.
+2. Question:
+   Since you have completed the tutorial by now and have tried to test your notification system by spawning multiple instances of Receiver, explain how Observer pattern eases you to plug in more subscribers. How about spawning more than one instance of Main app, will it still be easy enough to add to the system?
+   
+   Answer:
+   Observer pattern memudahkan penambahan receiver baru karena publisher hanya perlu mengenali subscriber melalui mekanisme yang sama, yaitu URL callback yang terdaftar pada `product_type` tertentu. Dengan begitu, logic publisher tidak perlu diubah setiap kali jumlah receiver bertambah. Menambahkan lebih dari satu Main app akan lebih rumit dibanding menambahkan receiver, karena kita harus memikirkan bagaimana receiver memilih publisher, dan bagaimana sinkronisasi subscription dilakukan.
 
-3. I have explored how tests and better Postman documentation could help this project, even though I did not add a full automated suite here. A curated Postman collection with saved requests, environment variables, and example responses is very useful for this work because the system behavior depends on multiple running instances and several related endpoints. That kind of documentation would also help in a group project by making setup, verification, and regression checking much more repeatable.
+3. Question:
+   Have you tried to make your own Tests, or enhance documentation on your Postman collection? If you have tried those features, tell us whether it is useful for your work (it can be your tutorial work or your Group Project).
+   
+   Answer:
+   Saya sudah mengeksplorasi banyak hal tentang bagaimana test dan dokumentasi Postman yang lebih baik bisa membantu tutorial ini, walaupun belum menambahkan automated test lengkap. Collection Postman yang rapi, lengkap dengan environment variables, saved requests, dan contoh response, sangat berguna bagi saya karena sistem ini yang melibatkan beberapa instance aplikasi dan banyak endpoint yang saling berkaitan. Dalam proyek kelompok, dokumentasi seperti ini juga memudahkan setup, verifikasi sistem, dan pengujian/testing ulang ketika ada perubahan pada kode.
